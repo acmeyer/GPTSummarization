@@ -1,0 +1,8 @@
+openai
+tiktoken
+requests
+beautifulsoup4
+unstructured
+python-dotenv
+unstructured[local-inference]
+detectron2 @ git+https://github.com/facebookresearch/detectron2.git@072713649a9b0069c10aad1aaab819112e8f1e2e
