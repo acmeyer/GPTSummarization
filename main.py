@@ -86,7 +86,10 @@ def get_summary(full_text: str, summary_type: str, model: str = 'gpt-3.5-turbo')
 
 def read_text_from_url(url: str) -> str:
     try:
-        response = requests.get(url)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers)
         response.raise_for_status()  # Raise an exception if the request returned an HTTP error
         soup = BeautifulSoup(response.text, 'html.parser')
         text = soup.get_text()
