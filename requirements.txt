@@ -2,6 +2,12 @@ openai
 tiktoken
 requests
 beautifulsoup4
-unstructured
 python-dotenv
-unstructured[local-inference]
+langchain
+faiss-cpu
+docx2txt
+pypdf2
+pypdf
+python-pptx
+python-multipart
+tenacity
