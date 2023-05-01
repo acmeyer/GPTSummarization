@@ -1,6 +1,6 @@
-# GPTSummarization
+# GPTSummarization and Q&A
 
-Get a quick summary of a document or url.
+Get a quick summary of a document or url and ask questions about it!
 
 ## How to use
 
@@ -22,7 +22,7 @@ To generate a summary of a url, run the following command:
 python main.py -u 'https://www.example.com'
 ```
 
-These commands will generate a summary of the file or url and both print it to the console as well as save it to a directory called "summaries".
+These commands will generate a summary of the file or url and both print it to the console as well as save it to the "data/summaries" directory. In addition, it will also prompt you to ask follow up questions if you have any about the document or url.
 
 ### Additional options
 
