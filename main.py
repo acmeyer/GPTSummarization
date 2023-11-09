@@ -16,20 +16,24 @@ from langchain.document_loaders import Docx2txtLoader
 import pptx
 from bs4 import BeautifulSoup
 import dotenv
-dotenv.load_dotenv('.env')
+
+dotenv.load_dotenv(".env")
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 GPT_4_MODEL = "gpt-4"
 GPT_3_MODEL = "gpt-3.5-turbo"
 DEFAULT_CHAT_MODEL = GPT_3_MODEL
 MODEL_TEMPERATURE = 0.0
-OPENAI_EMBEDDING_ENCODING = "cl100k_base" # this the encoding for text-embedding-ada-002
-MAX_TOKENS = 500
-CHUNK_TOKEN_SIZE = 200
+OPENAI_EMBEDDING_ENCODING = (
+    "cl100k_base"  # this the encoding for text-embedding-ada-002
+)
+MAX_TOKENS = 1000
+CHUNK_TOKEN_SIZE = 500
 
 # check if data directory exists
 if not os.path.exists("data/summaries"):
     os.makedirs("data/summaries")
+
 
 def count_tokens(text: str) -> int:
     """Returns the number of tokens in the given text."""
@@ -38,19 +42,21 @@ def count_tokens(text: str) -> int:
     num_tokens = len(tokens)
     return num_tokens, tokens
 
-@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
-def get_chat_completion(prompt: str, messages: list[dict], model: str = 'gpt-3.5-turbo'):
+
+# @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+def get_chat_completion(
+    prompt: str, messages: list[dict], model: str = "gpt-3.5-turbo"
+):
     """Returns ChatGPT's response to the given prompt."""
     system_message = [{"role": "system", "content": prompt}]
     conversation_messages = system_message + messages
     response = openai.ChatCompletion.create(
-        model=model,
-        messages=conversation_messages,
-        temperature=MODEL_TEMPERATURE
+        model=model, messages=conversation_messages, temperature=MODEL_TEMPERATURE
     )
-    return response.choices[0]['message']['content'].strip()
+    return response.choices[0]["message"]["content"].strip()
 
-def get_summary(full_text: str, summary_type: str, model: str = 'gpt-3.5-turbo') -> str:
+
+def get_summary(full_text: str, summary_type: str, model: str = "gpt-3.5-turbo") -> str:
     with open("prompts/summarization_prompt.md") as f:
         template = f.read()
     prompt = PromptTemplate(
@@ -65,22 +71,24 @@ def get_summary(full_text: str, summary_type: str, model: str = 'gpt-3.5-turbo')
     conversation_messages.append({"role": "user", "content": user_input})
     return get_chat_completion(prompt, conversation_messages, model=model)
 
+
 def extract_text_from_url(url: str) -> str:
     try:
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
         }
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # Raise an exception if the request returned an HTTP error
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(response.text, "html.parser")
         text = soup.get_text()
         return text
     except requests.exceptions.RequestException as e:
         print(f"An error occurred while fetching the URL: {e}")
-        return None
-    
+        raise e
+
+
 def write_to_file(text: str, filename: str):
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         f.write(text)
     print(f"Summary saved to {filename}")
 
@@ -139,8 +147,7 @@ def extract_text_from_filepath(filepath: str) -> str:
     return extracted_text
 
 
-
-def create_summary(url: str, filepath: str, summary_type: str, model: str = DEFAULT_CHAT_MODEL) -> str:
+def create_summary(url: str, filepath: str, model: str = DEFAULT_CHAT_MODEL) -> str:
     if filepath:
         full_text = extract_text_from_filepath(filepath)
         num_tokens, _ = count_tokens(full_text)
@@ -150,7 +157,7 @@ def create_summary(url: str, filepath: str, summary_type: str, model: str = DEFA
         full_text = extract_text_from_url(url)
         num_tokens, _ = count_tokens(full_text)
         title = url.split("/")[-1]
-        if not title or title == '' or title == 'index.html':
+        if not title or title == "" or title == "index.html":
             title = url.split("/")[-2]
 
     embeddings = OpenAIEmbeddings()
@@ -165,7 +172,9 @@ def create_summary(url: str, filepath: str, summary_type: str, model: str = DEFA
             summaries.append(summary)
             texts_for_embeddings.append(text)
         all_summaries = "\n\n".join(summaries)
-        full_response = get_summary(all_summaries, summary_type="detailed", model=GPT_4_MODEL)
+        full_response = get_summary(
+            all_summaries, summary_type="detailed", model=GPT_4_MODEL
+        )
         write_to_file(full_response, f"data/summaries/{title}.txt")
         response = full_response
     else:
@@ -184,19 +193,21 @@ def create_summary(url: str, filepath: str, summary_type: str, model: str = DEFA
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
     argparser.add_argument("-u", "--url", type=str, help="URL to summarize")
-    argparser.add_argument("-f", "--filepath", type=str, help="Path to file to summarize")
-    argparser.add_argument("-m", "--model", type=str, help="Model to use", default="gpt-3.5-turbo")
-    argparser.add_argument("-s", "--summary_type", type=str, help="Type of summary to generate", default="short")
+    argparser.add_argument(
+        "-f", "--filepath", type=str, help="Path to file to summarize"
+    )
+    argparser.add_argument(
+        "-m", "--model", type=str, help="Model to use", default="gpt-3.5-turbo"
+    )
     args = argparser.parse_args()
     url = args.url
-    summary_type = args.summary_type
     filepath = args.filepath
     model = args.model
 
     assert url or filepath, "Must provide either a URL or a filepath"
 
-    response, title = create_summary(url, filepath, summary_type, model)
-    print(f'\033[96m\033[1mSummary: {response}\033[0m\033[1m')
+    response, title = create_summary(url, filepath, model)
+    print(f"\033[96m\033[1mSummary: {response}\033[0m\033[1m")
 
     conversation_messages = []
     with open("prompts/chat_prompt.md", "r") as f:
@@ -207,7 +218,7 @@ if __name__ == "__main__":
     ).format()
     with open(f"data/{title}_vectorstore.pkl", "rb") as f:
         vectorstore = pickle.load(f)
-    while (user_input := input('You: ').strip()) != "":
+    while (user_input := input("You: ").strip()) != "":
         relevant_texts = vectorstore.similarity_search(user_input, top_k=3)
         relevant_content = "\n\n".join([f"{text}" for text in relevant_texts])
         user_content = f"""
@@ -218,6 +229,8 @@ if __name__ == "__main__":
         """
         user_message = {"role": "user", "content": user_content}
         conversation_messages.append(user_message)
-        answer = get_chat_completion(prompt, messages=conversation_messages, model=DEFAULT_CHAT_MODEL)
+        answer = get_chat_completion(
+            prompt, messages=conversation_messages, model=DEFAULT_CHAT_MODEL
+        )
         conversation_messages.append({"role": "assistant", "content": answer})
-        print(f'\033[96m\033[1mGPT: {answer}\033[0m\033[1m')
+        print(f"\033[96m\033[1mGPT: {answer}\033[0m\033[1m")

@@ -13,3 +13,7 @@ serviceAccount.json
 # Temp files
 data/
 summaries/
+
+.vscode/
+
+.mypy_cache/
