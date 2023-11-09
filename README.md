@@ -2,6 +2,10 @@
 
 Get a quick summary of a document or url and ask questions about it!
 
+## Try the bot!
+
+As a bit of an experiment, I created [a GPT assistant for this repository](https://chat.openai.com/g/g-qxASQRhiF-article-reader). You can ask it questions about how this repository works and even ways to improve it. Pretty cool!
+
 ## How to use
 
 Install the dependencies:
